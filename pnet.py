@@ -1,9 +1,9 @@
 import torch 
 import torch.nn as nn
 
-class PNET(nn.Module):
+class PNet(nn.Module):
     def __init__(self):
-        super(PNET, self).__init__()
+        super(PNet, self).__init__()
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=10, kernel_size=3, stride=1, padding=1)
         self.prelu1 = nn.PReLU()
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
