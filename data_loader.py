@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import numpy as np
 from PIL import Image
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -17,7 +18,7 @@ class CelebADataset(Dataset):
         """
         self.img_dir = img_dir
         self.attributes_df = attributes_df
-        self.image_files = sorted(os.listdir(img_dir))[:5000] #loading only first 5000 for now
+        self.image_files = sorted(os.listdir(img_dir))[:5000]
         self.transform = transform
 
     def __len__(self):
@@ -31,6 +32,7 @@ class CelebADataset(Dataset):
 
         #loads selected attributes
         attrs = self.attributes_df.iloc[idx, 1:].values
+        attrs = np.array(attrs, dtype=np.float32)
         attrs = torch.tensor(attrs, dtype=torch.float32)
 
         #possible transformation if needed
@@ -64,14 +66,17 @@ def get_dataloaders(img_dir, attr_path, selected_features, batch_size=32):
     attributes = attributes[columns_to_keep]
 
     # Limit to the first 5,000 rows
-    attributes = attributes.iloc[:5000]
+    available_images = sorted(os.listdir(img_dir))[:5000]
+    attributes = attributes[attributes['image_id'].isin(available_images)].reset_index(drop=True)
 
     # Split the dataset into 80% training and 20% testing
     train_df, test_df = train_test_split(attributes, test_size=0.2, random_state=42)
 
+    print(f"Train DataFrame: {len(train_df)}, Test DataFrame: {len(test_df)}")
+
     # Define transformations
     transform = transforms.Compose([
-        transforms.Resize((128, 128)),  # Resize to 128x128
+        transforms.Resize((12, 12)),  # Resize to 128x128
         transforms.ToTensor(),  # Convert to tensor
         transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  # Normalize
     ])
