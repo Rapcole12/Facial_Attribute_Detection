@@ -18,24 +18,25 @@ class CelebADataset(Dataset):
         """
         self.img_dir = img_dir
         self.attributes_df = attributes_df
-        self.image_files = sorted(os.listdir(img_dir))[:5000]
+        #self.image_files = sorted(os.listdir(img_dir))[:5000]
+        self.image_files = sorted(os.listdir(img_dir))[:len(self.attributes_df)]
         self.transform = transform
 
     def __len__(self):
-        return len(self.image_files)
+        return min(len(self.attributes_df), len(self.image_files))
 
     def __getitem__(self, idx):
-        #Loads images
+        #loags images
         img_name = self.image_files[idx]
         img_path = os.path.join(self.img_dir, img_name)
         image = Image.open(img_path).convert("RGB")
 
         #loads selected attributes
-        attrs = self.attributes_df.iloc[idx, 1:].values
-        attrs = np.array(attrs, dtype=np.float32)
+        attrs = self.attributes_df.iloc[idx, 1:].values.astype('float32')
+
+        #tensor conversion
         attrs = torch.tensor(attrs, dtype=torch.float32)
 
-        #possible transformation if needed
         if self.transform:
             image = self.transform(image)
 
@@ -55,37 +56,38 @@ def get_dataloaders(img_dir, attr_path, selected_features, batch_size=32):
     Returns:
         DataLoader: Training and testing DataLoaders.
     """
-    # Load the attributes CSV
+    #loads CSV
     attributes = pd.read_csv(attr_path)
 
-    # Convert -1 to 0 for binary classification
+    #converts -1 to 0 for binary classification
     attributes.iloc[:, 1:] = attributes.iloc[:, 1:].replace(-1, 0)
 
-    # Select the relevant columns (filename + selected features)
+    #selects relevant columns from the csv
     columns_to_keep = ['image_id'] + selected_features
     attributes = attributes[columns_to_keep]
+    attributes.iloc[:, 1:] = attributes.iloc[:, 1:].apply(pd.to_numeric, errors='coerce')
 
-    # Limit to the first 5,000 rows
-    available_images = sorted(os.listdir(img_dir))[:5000]
-    attributes = attributes[attributes['image_id'].isin(available_images)].reset_index(drop=True)
+    # Limit to the first 5,000 rows CAN BE CHANGED IF SIZE INCREASED
+    attributes = attributes.iloc[:5000]
 
-    # Split the dataset into 80% training and 20% testing
+    #ensure correct number of attributes
+    image_files = sorted(os.listdir(img_dir))[:len(attributes)]
+    if len(image_files) != len(attributes):
+        raise ValueError("Mismatch between number of images and attributes")
+
+    #80 percent training and 20 percent testing
     train_df, test_df = train_test_split(attributes, test_size=0.2, random_state=42)
-
-    print(f"Train DataFrame: {len(train_df)}, Test DataFrame: {len(test_df)}")
 
     # Define transformations
     transform = transforms.Compose([
-        transforms.Resize((12, 12)),  # Resize to 128x128
+        transforms.Resize((128, 128)),  # Resize to 128x128 - NOT SURE IF THIS  IS WHAT WE WANT FOR MODEL
         transforms.ToTensor(),  # Convert to tensor
-        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  # Normalize
+        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  #normalizes
     ])
 
-    # Create datasets
     train_dataset = CelebADataset(img_dir, train_df, transform=transform)
     test_dataset = CelebADataset(img_dir, test_df, transform=transform)
 
-    # Create DataLoaders
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
