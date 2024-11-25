@@ -80,7 +80,7 @@ def get_dataloaders(img_dir, attr_path, selected_features, batch_size=32):
 
     # Define transformations
     transform = transforms.Compose([
-        transforms.Resize((128, 128)),  # Resize to 128x128 - NOT SURE IF THIS  IS WHAT WE WANT FOR MODEL
+        transforms.Resize((12, 12)),
         transforms.ToTensor(),  # Convert to tensor
         transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  #normalizes
     ])

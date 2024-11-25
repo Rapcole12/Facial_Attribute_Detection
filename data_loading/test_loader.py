@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from data_loader import CelebADataset
+from data_loading.data_loader import CelebADataset
 from torchvision import transforms
 import matplotlib.pyplot as plt
 

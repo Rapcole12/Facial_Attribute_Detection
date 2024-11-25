@@ -1,5 +1,5 @@
-from MTCNN import MTCNN
-from data_loader import get_dataloaders
+from stages.FacialAttributeDetection import FacialAttributeDetection
+from data_loading.data_loader import get_dataloaders
 import torch
 from tqdm import tqdm
 from torch import nn
@@ -13,7 +13,6 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 def train(model, loader, criterion, optimizer, epochs=2):
 
-
     print("Start Training")
     for epoch in range(epochs):
         running_loss = 0.0
@@ -22,6 +21,7 @@ def train(model, loader, criterion, optimizer, epochs=2):
 
         for i, data in enumerate(tqdm(loader)):
             inputs, labels = data
+
             inputs, labels = inputs.to(device), labels.to(device)
 
             # Zero gradients
@@ -32,12 +32,13 @@ def train(model, loader, criterion, optimizer, epochs=2):
             loss.backward()
             optimizer.step()
             
+            predictions = (torch.sigmoid(outputs) > 0.5).float()
+            correct += (predictions == labels).float().sum().item()
+            total += labels.numel()
 
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+            running_loss += loss.item()
 
-            if i % 250 == 249:    # print every 2000 mini-batches
+            if i % 250 == 249:    # print every 250 mini-batches
                 print(f'[epoch {epoch + 1}, batch {i + 1:5d}] MTCNN Loss: {running_loss / 250:.3f}')
                 running_loss = 0.0
 
@@ -47,32 +48,58 @@ def train(model, loader, criterion, optimizer, epochs=2):
 
     print("\nFinished Training")
 
+def evaluation(model, loader):
+    # Evaluate accuracy on validation/test set
+    correct = 0
+    total = 0
+    print("\nStart Evaluating")
+    with torch.no_grad():
+        for data in tqdm(loader):
+            images, labels = data
+
+            images, labels = images.to(device), labels.to(device)
+            # calculate outputs by running images through the network
+            outputs = model(images)
+            # apply sigmoid and threshold for binary classification
+            predictions = (torch.sigmoid(outputs) > 0.5).float()
+            
+            # Update correct and total
+            correct += (predictions == labels).float().sum().item()  # Count correct predictions
+            total += labels.numel()  # Total number of elements in labels (for multi-label tasks)
+
+    # Calculate percentage accuracy
+    accuracy = 100 * correct / total
+    print(f'\nAccuracy of the network on the test set: {accuracy:.2f} %')
+
+
 def main():
     img_dir = "celeba_data/celeba-dataset/img_align_celeba/img_align_celeba"
     attr_path = "celeba_data/celeba-dataset/list_attr_celeba.csv/list_attr_celeba.csv"
 
-    selected_features = [   # 20 features
+    selected_features = [
         '5_o_Clock_Shadow', 'Arched_Eyebrows', 'Bags_Under_Eyes', 'Bald',
         'Bangs', 'Big_Lips', 'Big_Nose', 'Bushy_Eyebrows', 'Chubby', 'Double_Chin',
         'Eyeglasses', 'Goatee', 'High_Cheekbones', 'Mustache', 'Narrow_Eyes',
         'Oval_Face', 'Pointy_Nose', 'Receding_Hairline', 'Sideburns', 'Smiling'
     ]
 
-    batch_size = 8
+    batch_size = 4
 
     train_loader, test_loader = get_dataloaders(img_dir, attr_path, selected_features, batch_size=batch_size)
 
     print(device)
 
-    MTCNN_model = MTCNN().to(device)
+    Facial_Attribute_model = FacialAttributeDetection(len(selected_features)).to(device)
 
-    loss = nn.CrossEntropyLoss()
+    loss = nn.BCEWithLogitsLoss()
 
-    optimizer = optim.SGD(MTCNN_model.parameters(), lr=0.001, momentum=0.9)
+    optimizer = optim.SGD(Facial_Attribute_model.parameters(), lr=0.001, momentum=0.9)
 
-    num_epochs = 5
+    num_epochs = 2
 
-    train(MTCNN_model, train_loader, loss, optimizer, epochs=num_epochs)
+    train(Facial_Attribute_model, train_loader, loss, optimizer, epochs=num_epochs)
+
+    evaluation(Facial_Attribute_model, test_loader)
 
 
 if __name__ == "__main__":
