@@ -15,7 +15,7 @@ def extract_patches(images_normalized, bboxes_batch, expected_size=(24, 24)):
         bboxes_batch = torch.tensor(bboxes_batch, dtype=torch.float32)
 
     device = images_normalized.device  # This assumes images_normalized is already on the correct device (CPU or CUDA)
-
+    
     # Initialize a list for ROIs
     rois = []
     for i in range(batch_size):
