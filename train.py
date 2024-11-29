@@ -27,19 +27,19 @@ def train(model, loader, criterion, optimizer, epochs=2):
             # Zero gradients
             optimizer.zero_grad()
 
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
+            attributes, _, _= model(inputs)
+            loss = criterion(attributes, labels)
             loss.backward()
             optimizer.step()
             
-            predictions = (torch.sigmoid(outputs) > 0.5).float()
+            predictions = (torch.sigmoid(attributes) > 0.5).float()
             correct += (predictions == labels).float().sum().item()
             total += labels.numel()
 
             running_loss += loss.item()
 
             if i % 250 == 249:    # print every 250 mini-batches
-                print(f'[epoch {epoch + 1}, batch {i + 1:5d}] MTCNN Loss: {running_loss / 250:.3f}')
+                print(f'[epoch {epoch + 1}, batch {i + 1:5d}] Facial Attribute Detection Loss: {running_loss / 250:.3f}')
                 running_loss = 0.0
 
                 print(f'\nAccuracy of the network on last 250 training images: {100 * correct // total} %')
@@ -59,9 +59,9 @@ def evaluation(model, loader):
 
             images, labels = images.to(device), labels.to(device)
             # calculate outputs by running images through the network
-            outputs = model(images)
+            attributes, _, _ = model(images)
             # apply sigmoid and threshold for binary classification
-            predictions = (torch.sigmoid(outputs) > 0.5).float()
+            predictions = (torch.sigmoid(attributes) > 0.5).float()
             
             # Update correct and total
             correct += (predictions == labels).float().sum().item()  # Count correct predictions
@@ -100,6 +100,8 @@ def main():
     train(Facial_Attribute_model, train_loader, loss, optimizer, epochs=num_epochs)
 
     evaluation(Facial_Attribute_model, test_loader)
+
+    torch.save(Facial_Attribute_model, 'Face_Attribute_model.pth')
 
 
 if __name__ == "__main__":

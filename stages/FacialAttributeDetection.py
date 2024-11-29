@@ -16,4 +16,4 @@ class FacialAttributeDetection(nn.Module):
 
         x = self.attribute_recognition(new_bounding_box_onet)
         
-        return x
+        return x, bounding_box_onet, prob_onet
