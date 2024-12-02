@@ -24,7 +24,20 @@ class MTCNN(nn.Module):
 
         new_bounding_box_pnet = resize_to_square(new_bounding_box_pnet)
 
+        np.clip(new_bounding_box_pnet, -12, 12)
+
         new_bounding_box_pnet = extract_patches(x ,new_bounding_box_pnet, expected_size=(24, 24))
+
+        image = new_bounding_box_pnet[0].cpu().detach().numpy()
+        # Transpose the image to HxWxC format (channels last for OpenCV)
+        image = np.transpose(image, (1, 2, 0))
+        # Normalize the image if necessary (assuming it's between -1 and 1)
+        image = np.clip((image + 1) * 127.5, 0, 255).astype(np.uint8)
+        # Display the image using OpenCV
+        cv2.imshow("Tensor Image", image)
+        # Wait for a key press and close the window
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
         prob_rnet, bounding_box_rnet = self.rnet(new_bounding_box_pnet)
 
@@ -38,6 +51,17 @@ class MTCNN(nn.Module):
 
         new_bounding_box_rnet = extract_patches(new_bounding_box_pnet, new_bounding_box_rnet, expected_size=(48, 48))
 
+        image = new_bounding_box_rnet[0].cpu().detach().numpy()
+        # Transpose the image to HxWxC format (channels last for OpenCV)
+        image = np.transpose(image, (1, 2, 0))
+        # Normalize the image if necessary (assuming it's between -1 and 1)
+        image = np.clip((image + 1) * 127.5, 0, 255).astype(np.uint8)
+        # Display the image using OpenCV
+        cv2.imshow("Tensor Image", image)
+        # Wait for a key press and close the window
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
         prob_onet, bounding_box_onet, landmarks_onet = self.onet(new_bounding_box_rnet)
 
         bboxes_batch = replace_confidence(bounding_box_onet, prob_onet)
@@ -45,5 +69,5 @@ class MTCNN(nn.Module):
         bounding_box_onet = adjust_bboxes(bboxes_batch, bounding_box_onet)
 
         # Return the predictions from the three networks
-        return new_bounding_box_rnet, prob_onet, bounding_box_onet, landmarks_onet
+        return new_bounding_box_pnet, prob_onet, bounding_box_onet, landmarks_onet
     

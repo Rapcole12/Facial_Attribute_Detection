@@ -43,12 +43,12 @@ while True:
 
     ##Assuming an original 64 x 64 image coordinates
 
-    width_scale = frame_width / 76
-    height_scale = frame_width / 76
+    width_scale = frame_width / 64
+    height_scale = frame_height / 64
 
     # Assuming normalized coordinates [x1, y1, x2, y2]
-    x1 = abs(int(face[0] * width_scale))
-    y1 = abs(int(face[1] * height_scale))
+    y1 = abs(int(face[0] * width_scale))
+    x1 = abs(int(face[1] * height_scale))
     x2 = abs(int(face[2] * width_scale))
     y2 = abs(int(face[3] * height_scale))
 
