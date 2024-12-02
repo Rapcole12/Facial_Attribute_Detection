@@ -36,15 +36,16 @@ while True:
     # detect faces using Facial Attribute Detection
     attributes, face, prob = detector(tensor_frame)
 
-    face = face.cpu().detach().numpy()[0]  # Extract the first bounding box
+    print(face)
+
+    face = face[0]  # Extract the first bounding box
     frame_height, frame_width, _ = frame.shape
 
     # Assuming normalized coordinates [x1, y1, x2, y2]
-    y1 = abs(int(face[0] * frame_width))
-    x1 = abs(int(face[1] * frame_height))
-    y2 = abs(int(face[2] * frame_width))
-    x2 = abs(int(face[3] * frame_height))
-
+    x1 = abs(int(face[0] * frame_width))
+    y1 = abs(int(face[1] * frame_height))
+    x2 = abs(int(face[2] * frame_width))
+    y2 = abs(int(face[3] * frame_height))
 
     print(f"Face Coordinates: ({x1}, {y1}), ({x2}, {y2})")
 

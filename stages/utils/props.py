@@ -15,7 +15,7 @@ def extract_patches(images_normalized, bboxes_batch, expected_size=(24, 24)):
         bboxes_batch = torch.tensor(bboxes_batch, dtype=torch.float32)
 
     device = images_normalized.device  # This assumes images_normalized is already on the correct device (CPU or CUDA)
-    
+
     # Initialize a list for ROIs
     rois = []
     for i in range(batch_size):
@@ -164,34 +164,19 @@ def resize_to_square(bboxes):
     largest_size = np.maximum(w, h)  # Largest dimension (width or height)
 
     # Adjust x1 and y1 to center the bounding box and resize to square
-    bboxes[:, 0] = bboxes[:, 0] + w * 0.5 - largest_size * 0.5
-    bboxes[:, 1] = bboxes[:, 1] + h * 0.5 - largest_size * 0.5
-    bboxes[:, 2:4] = bboxes[:, 0:2] + np.tile(largest_size, (2, 1)).T  # Resize x2, y2
+    bboxes[:, 0] = np.abs(bboxes[:, 0] + w * 0.5 - largest_size * 0.5)
+    bboxes[:, 1] = np.abs(bboxes[:, 1] + h * 0.5 - largest_size * 0.5)
+    bboxes[:, 2:4] = np.abs(bboxes[:, 0:2] + np.tile(largest_size, (2, 1)).T)  # Resize x2, y2
 
     return bboxes
 
-import numpy as np
+def generate_bounding_box_after_pnet(bbox_reg, bbox_class, threshold_face, strides=2, cell_size=12):
 
-def generate_bounding_box_rnet(bbox_reg, bbox_class, threshold_face, strides=2, cell_size=12):
-    """
-    Generates bounding boxes for detected objects based on 1D array inputs for class and regression outputs.
-
-    Args:
-        bbox_reg (np.ndarray): 1D array containing bounding box regression predictions.
-        bbox_class (np.ndarray): 1D array containing class predictions.
-        threshold_face (float): Threshold for face probability.
-        strides (int, optional): Step size for the detection window. Default is 2.
-        cell_size (int, optional): Sliding window size. Default is 12.
-
-    Returns:
-        tuple: 
-            - np.ndarray: Array of bounding boxes [x1, y1, x2, y2].
-            - np.ndarray: 1D array containing flattened bounding box information.
-    """
     # Reshape the inputs to expected shapes
-    bbox_reg = bbox_reg.reshape((-1, 4))  # (batch_size * height * width, 4)
-    bbox_class = bbox_class.reshape((-1, 2))  # (batch_size * height * width, 2)
-    
+    # Ensure tensors are on the CPU for NumPy compatibility
+    bbox_reg = bbox_reg.cpu().detach().numpy().reshape((-1, 4))  # (batch_size * height * width, 4)
+    bbox_class = bbox_class.cpu().detach().numpy().reshape((-1, 2))  # (batch_size * height * width, 2)
+
     # Extract confidence scores
     confidence_score = bbox_class[:, 1]
 
@@ -204,15 +189,12 @@ def generate_bounding_box_rnet(bbox_reg, bbox_class, threshold_face, strides=2, 
     confidence_score = confidence_score[valid_indices]
 
     # Calculate bounding box coordinates
-    x1 = (valid_indices % strides) * strides + filtered_bbox_reg[:, 0] * cell_size
-    y1 = (valid_indices // strides) * strides + filtered_bbox_reg[:, 1] * cell_size
-    x2 = x1 + filtered_bbox_reg[:, 2] * cell_size
-    y2 = y1 + filtered_bbox_reg[:, 3] * cell_size
+    x1 = np.abs(((valid_indices % strides) * strides) + (filtered_bbox_reg[:, 0] * cell_size).astype(int))
+    y1 = np.abs(((valid_indices // strides) * strides) + (filtered_bbox_reg[:, 1] * cell_size).astype(int))
+    x2 = np.abs(x1 + (filtered_bbox_reg[:, 2] * cell_size).astype(int))
+    y2 = np.abs(y1 + (filtered_bbox_reg[:, 3] * cell_size).astype(int))
 
-    # Combine into final bounding box array
+    # Combine into a bounding box array
     bboxes_result = np.stack([x1, y1, x2, y2], axis=-1)
 
-    # Create the 1D array representation
-    flattened_result = bboxes_result.flatten()
-
-    return bboxes_result, flattened_result
+    return bboxes_result
