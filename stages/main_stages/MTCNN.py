@@ -28,7 +28,6 @@ class MTCNN(nn.Module):
 
         image = new_bounding_box_pnet[0].cpu().detach().numpy()
         
-
         # Transpose the image to HxWxC format (channels last for OpenCV)
         image = np.transpose(image, (1, 2, 0))
 
@@ -47,6 +46,10 @@ class MTCNN(nn.Module):
         bboxes_batch = replace_confidence(bounding_box_rnet, prob_rnet)
 
         new_bounding_box_rnet = adjust_bboxes(bboxes_batch, bounding_box_rnet)
+
+        new_bounding_box_rnet =  generate_bounding_box_rnet(new_bounding_box_rnet, prob_rnet, .5)
+
+        print(new_bounding_box_pnet)
 
         new_bounding_box_rnet = extract_patches(x, new_bounding_box_rnet, expected_size=(48, 48))
 

@@ -169,3 +169,50 @@ def resize_to_square(bboxes):
     bboxes[:, 2:4] = bboxes[:, 0:2] + np.tile(largest_size, (2, 1)).T  # Resize x2, y2
 
     return bboxes
+
+import numpy as np
+
+def generate_bounding_box_rnet(bbox_reg, bbox_class, threshold_face, strides=2, cell_size=12):
+    """
+    Generates bounding boxes for detected objects based on 1D array inputs for class and regression outputs.
+
+    Args:
+        bbox_reg (np.ndarray): 1D array containing bounding box regression predictions.
+        bbox_class (np.ndarray): 1D array containing class predictions.
+        threshold_face (float): Threshold for face probability.
+        strides (int, optional): Step size for the detection window. Default is 2.
+        cell_size (int, optional): Sliding window size. Default is 12.
+
+    Returns:
+        tuple: 
+            - np.ndarray: Array of bounding boxes [x1, y1, x2, y2].
+            - np.ndarray: 1D array containing flattened bounding box information.
+    """
+    # Reshape the inputs to expected shapes
+    bbox_reg = bbox_reg.reshape((-1, 4))  # (batch_size * height * width, 4)
+    bbox_class = bbox_class.reshape((-1, 2))  # (batch_size * height * width, 2)
+    
+    # Extract confidence scores
+    confidence_score = bbox_class[:, 1]
+
+    # Filter detections based on threshold
+    valid_indices = np.where(confidence_score > threshold_face)[0]
+    if valid_indices.size == 0:
+        return np.empty((0, 4)), np.empty(0)  # Return empty arrays if no detections meet the threshold
+
+    filtered_bbox_reg = bbox_reg[valid_indices]
+    confidence_score = confidence_score[valid_indices]
+
+    # Calculate bounding box coordinates
+    x1 = (valid_indices % strides) * strides + filtered_bbox_reg[:, 0] * cell_size
+    y1 = (valid_indices // strides) * strides + filtered_bbox_reg[:, 1] * cell_size
+    x2 = x1 + filtered_bbox_reg[:, 2] * cell_size
+    y2 = y1 + filtered_bbox_reg[:, 3] * cell_size
+
+    # Combine into final bounding box array
+    bboxes_result = np.stack([x1, y1, x2, y2], axis=-1)
+
+    # Create the 1D array representation
+    flattened_result = bboxes_result.flatten()
+
+    return bboxes_result, flattened_result
