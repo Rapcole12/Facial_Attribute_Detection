@@ -92,6 +92,6 @@ This project focuses on detecting human faces in live video streams and identify
 4. Press q to exit the live video stream.
 
 ## Resources
-The following paper gave us inspriation for this project and gave us important insight onn the math behind an MTCNN
+The following paper gave us inspriation for this project and gave us important insight on the math behind an MTCNN
 and was able to help guide us in our implementaion.
 https://arxiv.org/ftp/arxiv/papers/1604/1604.02878.pdf
