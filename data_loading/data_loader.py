@@ -2,7 +2,9 @@ import os
 import pandas as pd
 import numpy as np
 from PIL import Image
+import cv2
 import torch
+from mtcnn.utils.images import load_image
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from sklearn.model_selection import train_test_split
@@ -26,19 +28,14 @@ class CelebADataset(Dataset):
         return min(len(self.attributes_df), len(self.image_files))
 
     def __getitem__(self, idx):
-        #loags images
+       # Load image using OpenCV
         img_name = self.image_files[idx]
         img_path = os.path.join(self.img_dir, img_name)
-        image = Image.open(img_path).convert("RGB")
+        image = load_image(img_path)
 
-        #loads selected attributes
+        # Load selected attributes
         attrs = self.attributes_df.iloc[idx, 1:].values.astype('float32')
-
-        #tensor conversion
         attrs = torch.tensor(attrs, dtype=torch.float32)
-
-        if self.transform:
-            image = self.transform(image)
 
         return image, attrs
 
@@ -78,15 +75,8 @@ def get_dataloaders(img_dir, attr_path, selected_features, batch_size=32):
     #80 percent training and 20 percent testing
     train_df, test_df = train_test_split(attributes, test_size=0.2, random_state=42)
 
-    # Define transformations
-    transform = transforms.Compose([
-        transforms.Resize((12, 12)),
-        transforms.ToTensor(),  # Convert to tensor
-        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  #normalizes
-    ])
-
-    train_dataset = CelebADataset(img_dir, train_df, transform=transform)
-    test_dataset = CelebADataset(img_dir, test_df, transform=transform)
+    train_dataset = CelebADataset(img_dir, train_df)
+    test_dataset = CelebADataset(img_dir, test_df)
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
