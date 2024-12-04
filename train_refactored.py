@@ -1,5 +1,5 @@
 from stages.models.FacialAttributeDetection_Refactored import FacialAttributeDetection
-from data_loading.data_loader import get_dataloaders
+from data_loading.data_loader_refactored import get_dataloaders
 import torch
 from tqdm import tqdm
 from torch import nn
