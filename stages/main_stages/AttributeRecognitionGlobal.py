@@ -1,7 +1,11 @@
 
 import torch
 import torch.nn as nn
-
+'''
+    Inspiration for the Global Attribute Recognition came
+    from the following Youtube video
+    https://www.youtube.com/watch?v=1an_WUmZ3xQ
+'''
 class AttributeRecognitionCNN(nn.Module):
     def __init__(self, num_attributes):
         super(AttributeRecognitionCNN, self).__init__()

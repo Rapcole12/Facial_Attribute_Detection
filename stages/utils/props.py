@@ -2,7 +2,12 @@
 import torchvision.ops
 import numpy as np
 import torch
-
+'''
+    Some code from this section was borrowed from the following github link.
+    The code we borrowed was for generating the correct bounding boxes for
+    out implementation. We thank them for their efforts.
+    https://github.com/ipazc/mtcnn/blob/master/mtcnn/utils/bboxes.py
+'''
 def extract_patches(images_normalized, bboxes_batch, expected_size=(24, 24)):
     # Get the shape of the input images
     batch_size, _, img_height, img_width = images_normalized.shape
