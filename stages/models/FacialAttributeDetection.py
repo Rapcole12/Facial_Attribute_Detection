@@ -1,5 +1,5 @@
-from ..main_stages.MTCNN import MTCNN
-from ..main_stages.AttributeRecognitionGlobal import AttributeRecognitionCNN
+from ..main_stages.MTCNN import MTCNN, save_and_show_image
+from ..main_stages.AttributeRecognition import AttributeRecognitionCNN
 from ..utils.props import extract_patches
 import torch.nn as nn
 import numpy as np
@@ -20,6 +20,20 @@ class FacialAttributeDetection(nn.Module):
         new_bounding_box_onet = resize_to_square(new_bounding_box_onet)
 
         new_bounding_box_onet = extract_patches(bounding_box_rnet, new_bounding_box_onet, expected_size=(64, 64))
+
+        # Save and show RNet output
+        save_and_show_image(new_bounding_box_onet[0], "onet", 0)
+
+        # image = new_bounding_box_onet[0].cpu().detach().numpy()
+        # # Transpose the image to HxWxC format (channels last for OpenCV)
+        # image = np.transpose(image, (1, 2, 0))
+        # # Normalize the image if necessary (assuming it's between -1 and 1)
+        # image = np.clip((image + 1) * 127.5, 0, 255).astype(np.uint8)
+        # # Display the image using OpenCV
+        # cv2.imshow("Tensor Image", image)
+        # # Wait for a key press and close the window
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
 
         x = self.attribute_recognition(new_bounding_box_onet)
         
