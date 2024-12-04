@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 class FacialAttributeDetection(nn.Module):
-    def __init__(self, num_attributes, device):
+    def __init__(self, num_attributes):
         super(FacialAttributeDetection, self).__init__()
         self.mtcnn = MTCNN()
         self.attribute_recognition = AttributeRecognitionCNN(num_attributes)
@@ -18,9 +18,8 @@ class FacialAttributeDetection(nn.Module):
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  # Normalize input
         ])
-        self.device = device
 
-    def forward(self, x):
+    def forward(self, x, device):
         x = x.cpu().detach().numpy().squeeze(0)
 
         cropped_faces = []
@@ -36,12 +35,12 @@ class FacialAttributeDetection(nn.Module):
 
         # Transform cropped faces for input to the attribute recognition model
         preprocessed_faces = [
-            self.transform(face).unsqueeze(0).to(self.device) for face in cropped_faces
+            self.transform(face).unsqueeze(0).to(device) for face in cropped_faces
         ]
 
         if not preprocessed_faces:
             # Return an empty tensor and an empty list if no faces are detected
-            return torch.empty(0, self.attribute_recognition.classifier[-1].out_features).to(self.device), []
+            return torch.empty(0, self.attribute_recognition.classifier[-1].out_features).to(device), []
 
         # Stack preprocessed faces into a batch
         preprocessed_faces = torch.cat(preprocessed_faces)

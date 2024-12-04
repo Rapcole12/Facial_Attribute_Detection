@@ -27,7 +27,7 @@ def train(model, loader, criterion, optimizer, epochs=2):
             # Zero gradients
             optimizer.zero_grad()
 
-            attributes, _= model(inputs)
+            attributes, _= model(inputs, device)
 
             if attributes is None or attributes.size(0) == 0:
                 # Skip loss calculation for this batch if no faces were detected
@@ -64,7 +64,7 @@ def evaluation(model, loader):
 
             images, labels = images.to(device), labels.to(device)
             # calculate outputs by running images through the network
-            attributes, _= model(images)
+            attributes, _= model(images, device)
             if attributes is None:
                 # Skip loss calculation for this batch or handle accordingly
                 continue
@@ -97,7 +97,7 @@ def main():
 
     print(device)
 
-    Facial_Attribute_model = FacialAttributeDetection(len(selected_features), device).to(device)
+    Facial_Attribute_model = FacialAttributeDetection(len(selected_features)).to(device)
 
     loss = nn.BCEWithLogitsLoss()
 

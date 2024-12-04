@@ -26,7 +26,7 @@ while True:
     pytorch_tensor = torch.from_numpy(frame).unsqueeze(0).to(device)
 
     # Detect faces using Facial Attribute Detection
-    attributes, faces = detector(pytorch_tensor)
+    attributes, faces = detector(pytorch_tensor, device)
 
     # Draw the rectangle
     for face in faces:
