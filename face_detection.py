@@ -1,18 +1,14 @@
 import cv2
 import torch
-from PIL import Image
-from torchvision import transforms
-from stages.utils.props import generate_bounding_box_after_pnet, resize_to_square
 
 # Check device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
-# Load the model and move it to the appropriate device
+# Load pretrained model
 detector = torch.load('Face_Attribute_model.pth', map_location=device)
 detector = detector.to(device)
 detector.eval()
-
 
 # Define attribute labels
 attribute_labels = [
@@ -48,48 +44,10 @@ while True:
 
         # Process attributes (sigmoid activation + thresholding)
         probabilities = torch.sigmoid(attr).cpu().numpy()
-        detected_attributes = [label for label, prob in zip(attribute_labels, probabilities) if prob > 0.3]
-
-        # print("Probabilities:", probabilities)
-
-        # Print attributes in terminal
-        # print(f"Face at ({x1}, {y1}, {x2}, {y2}): Detected Attributes: {detected_attributes}")
-
-        # Display attributes on the frame
-        # if detected_attributes:
-        #     text = ", ".join(detected_attributes)
-        #     cv2.putText(frame, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
-
-                # Get top three attributes with confidence
-        top_indices = probabilities.argsort()[-3:][::-1]
-        top_attributes = [(attribute_labels[i], probabilities[i] * 100) for i in top_indices]
-
-        # # Filter attributes by threshold
-        # threshold = 0.3  # Set your confidence threshold
-        # text_lines = [
-        #     f"{label}: {prob * 100:.1f}%" 
-        #     for label, prob in zip(attribute_labels, probabilities) 
-        #     if prob > threshold
-        # ]
-
-        # # Format text for display
-        # # text_lines = [f"{attr}: {conf:.1f}%" for attr, conf in top_attributes]
-
-        # # Display text in the bottom-right corner
-        # x_text = frame_width - 200  # Adjust for width
-        # y_text = frame_height - 20  # Start from the bottom of the frame
-
-        # for line in text_lines:
-        #     cv2.putText(frame, line, (x_text, y_text), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-        #     y_text -= 20  # Move up for the next line
     
-     # Filter attributes by threshold
-        threshold = 0.3  # Set your confidence threshold
-        detected_attributes = [
-            (label, prob * 100) 
-            for label, prob in zip(attribute_labels, probabilities) 
-            if prob > threshold
-        ]
+        # Filter attributes by threshold
+        threshold = 0.3  # Set confidence threshold
+        detected_attributes = [(label, prob * 100) for label, prob in zip(attribute_labels, probabilities) if prob > threshold]
 
         # Print attributes in the terminal
         print(f"Face at ({x1}, {y1}, {x2}, {y2}): Detected Attributes: {detected_attributes}")
