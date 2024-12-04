@@ -1,5 +1,5 @@
 from mtcnn import MTCNN
-from ..main_stages.AttributeRecognition import AttributeRecognitionCNN
+from ..main_stages.AttributeRecognitionMMCNN import AttributeRecognitionCNN
 from ..utils.props import extract_patches
 import torch.nn as nn
 import torch
@@ -14,10 +14,11 @@ class FacialAttributeDetection(nn.Module):
         self.attribute_recognition = AttributeRecognitionCNN(num_attributes)
         self.transform = transforms.Compose([
             transforms.ToPILImage(),
-            transforms.Resize((64, 64)),  # Resize to the required size
+            transforms.Resize((128, 128)),  # Resize to the required size
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  # Normalize input
         ])
+        self.num_attri = num_attributes
 
     def forward(self, x, device):
         x = x.cpu().detach().numpy().squeeze(0)
@@ -40,7 +41,7 @@ class FacialAttributeDetection(nn.Module):
 
         if not preprocessed_faces:
             # Return an empty tensor and an empty list if no faces are detected
-            return torch.empty(0, self.attribute_recognition.classifier[-1].out_features).to(device), []
+            return torch.empty(0, self.num_attri).to(device), []
 
         # Stack preprocessed faces into a batch
         preprocessed_faces = torch.cat(preprocessed_faces)

@@ -1,5 +1,5 @@
 from ..main_stages.MTCNN import MTCNN
-from ..main_stages.AttributeRecognition import AttributeRecognitionCNN
+from ..main_stages.AttributeRecognitionGlobal import AttributeRecognitionCNN
 from ..utils.props import extract_patches
 import torch.nn as nn
 import numpy as np
