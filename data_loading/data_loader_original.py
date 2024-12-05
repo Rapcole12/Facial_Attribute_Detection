@@ -68,7 +68,7 @@ def get_dataloaders(img_dir, attr_path, selected_features, batch_size=32):
     attributes.iloc[:, 1:] = attributes.iloc[:, 1:].apply(pd.to_numeric, errors='coerce')
 
     # Limit to the first 10,000 rows CAN BE CHANGED IF SIZE INCREASED
-    attributes = attributes.iloc[:10000]
+    attributes = attributes.iloc[:22000]
 
     #ensure correct number of attributes
     image_files = sorted(os.listdir(img_dir))[:len(attributes)]

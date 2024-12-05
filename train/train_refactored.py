@@ -94,7 +94,7 @@ def main():
         'Oval_Face', 'Pointy_Nose', 'Receding_Hairline', 'Sideburns', 'Smiling'
     ]
 
-    batch_size = 1
+    batch_size = 4
 
     train_loader, test_loader = get_dataloaders(img_dir, attr_path, selected_features, batch_size=batch_size)
 

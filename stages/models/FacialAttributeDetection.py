@@ -1,5 +1,5 @@
 from ..main_stages.MTCNN import MTCNN, save_and_show_image
-from ..main_stages.AttributeRecognition import AttributeRecognitionCNN
+from ..main_stages.AttributeRecognitionGlobal import AttributeRecognitionCNN
 from ..utils.props import extract_patches
 import torch.nn as nn
 import numpy as np
@@ -20,9 +20,6 @@ class FacialAttributeDetection(nn.Module):
         new_bounding_box_onet = resize_to_square(new_bounding_box_onet)
 
         new_bounding_box_onet = extract_patches(bounding_box_rnet, new_bounding_box_onet, expected_size=(64, 64))
-
-        # Save and show RNet output
-        save_and_show_image(new_bounding_box_onet[0], "onet", 0)
 
         x = self.attribute_recognition(new_bounding_box_onet)
         

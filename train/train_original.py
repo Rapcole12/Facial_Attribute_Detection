@@ -104,7 +104,7 @@ def main():
 
     evaluation(Facial_Attribute_model, test_loader)
 
-    torch.save(Facial_Attribute_model, 'Face_Attribute_model.pth')
+    torch.save(Facial_Attribute_model, 'Face_Attribute_model_original.pth')
 
 
 if __name__ == "__main__":

@@ -1,10 +1,8 @@
 from mtcnn import MTCNN
 from ..main_stages.AttributeRecognitionMMCNN import AttributeRecognitionCNN
-from ..utils.props import extract_patches
 import torch.nn as nn
 import torch
 from torchvision import transforms
-import matplotlib.pyplot as plt
 import numpy as np
 
 class FacialAttributeDetection(nn.Module):
@@ -21,34 +19,53 @@ class FacialAttributeDetection(nn.Module):
         self.num_attri = num_attributes
 
     def forward(self, x, device):
-        x = x.cpu().detach().numpy().squeeze(0)
+        """
+        x: Batch of images (B, C, H, W)
+        device: Device to run the computation on
+        """
+        x = x.cpu().detach().numpy()  # Convert tensor to numpy array
+        batch_size = x.shape[0]  # Get batch size
+        
+        all_attributes = []
+        all_bounding_boxes = []
 
-        cropped_faces = []
-        bounding_boxes = []
+        for i in range(batch_size):
+            image = x[i]
+            
+            cropped_faces = []
+            bounding_boxes = []
+            detections = self.mtcnn.detect_faces(image)
 
-        detections = self.mtcnn.detect_faces(x)
+            for detection in detections:
+                x_min, y_min, w, h = detection['box']
+                cropped_face = image[y_min:y_min+h, x_min:x_min+w]  # Crop the face
+                cropped_faces.append(cropped_face)
+                bounding_boxes.append([x_min, y_min, x_min+w, y_min+h])
 
-        for detection in detections:
-            x_min, y_min, w, h = detection['box']
-            cropped_face = x[y_min:y_min+h, x_min:x_min+w]  # Crop the face
-            cropped_faces.append(cropped_face)
-            bounding_boxes.append([x_min, y_min, x_min+w, y_min+h])
+            # Transform cropped faces for input to the attribute recognition model
+            preprocessed_faces = [
+                self.transform(face).unsqueeze(0).to(device) for face in cropped_faces
+            ]
 
-        # Transform cropped faces for input to the attribute recognition model
-        preprocessed_faces = [
-            self.transform(face).unsqueeze(0).to(device) for face in cropped_faces
-        ]
+            if not preprocessed_faces:
+                # Append an empty tensor and an empty list if no faces are detected
+                all_attributes.append(torch.empty(1, self.num_attri).to(device))
+                all_bounding_boxes.append([])
+                continue
 
-        if not preprocessed_faces:
-            # Return an empty tensor and an empty list if no faces are detected
-            return torch.empty(0, self.num_attri).to(device), []
+            # Stack preprocessed faces into a batch
+            preprocessed_faces = torch.cat(preprocessed_faces)
 
-        # Stack preprocessed faces into a batch
-        preprocessed_faces = torch.cat(preprocessed_faces)
+            attributes = self.attribute_recognition(preprocessed_faces)
 
-        # Pass the batch of faces through the attribute recognition model
-        attributes = self.attribute_recognition(preprocessed_faces)
+            attributes_avg = attributes.mean(dim=0, keepdim=True)
+            
+            # Append results to batch-level lists
+            all_attributes.append(attributes_avg)
+            all_bounding_boxes.append(bounding_boxes)
 
-        attributes_avg = attributes.mean(dim=0, keepdim=True)
+        # Stack attributes for the entire batch
+        all_attributes = torch.cat(all_attributes)
 
-        return attributes_avg, bounding_boxes
+        return all_attributes, all_bounding_boxes
+ 

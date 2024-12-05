@@ -28,9 +28,6 @@ class MTCNN(nn.Module):
 
         new_bounding_box_pnet = extract_patches(x ,new_bounding_box_pnet, expected_size=(24, 24))
 
-        # Save and show PNet output
-        save_and_show_image(new_bounding_box_pnet[0], "pnet", 0)
-
         prob_rnet, bounding_box_rnet = self.rnet(new_bounding_box_pnet)
 
         bboxes_batch = replace_confidence(bounding_box_rnet, prob_rnet)
@@ -42,9 +39,6 @@ class MTCNN(nn.Module):
         new_bounding_box_rnet = resize_to_square(new_bounding_box_rnet)
 
         new_bounding_box_rnet = extract_patches(new_bounding_box_pnet, new_bounding_box_rnet, expected_size=(48, 48))
-
-        # Save and show RNet output
-        save_and_show_image(new_bounding_box_rnet[0], "rnet", 0)
 
         prob_onet, bounding_box_onet, landmarks_onet = self.onet(new_bounding_box_rnet)
 
