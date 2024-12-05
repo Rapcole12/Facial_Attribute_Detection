@@ -2,12 +2,7 @@
 import torchvision.ops
 import numpy as np
 import torch
-'''
-    Some code from this section was borrowed from the following github link.
-    The code we borrowed was for generating the correct bounding boxes for
-    out implementation. We thank them for their efforts.
-    https://github.com/ipazc/mtcnn/blob/master/mtcnn/utils/bboxes.py
-'''
+
 def extract_patches(images_normalized, bboxes_batch, expected_size=(24, 24)):
     # Get the shape of the input images
     batch_size, _, img_height, img_width = images_normalized.shape
@@ -91,6 +86,11 @@ def generate_bounding_box(bbox_reg, bbox_class, threshold_face, strides=2, cell_
     y1 = bbox_up_left[1] + reg_y1 * reg_h  # Adjusted y1
     x2 = bbox_bottom_right[2] + reg_x2 * reg_w  # Adjusted x2
     y2 = bbox_bottom_right[1] + reg_y2 * reg_h  # Adjusted y2
+
+    x1 = np.clip(x1, 0, cell_size)
+    x2 = np.clip(x2, 0, cell_size)
+    y1 = np.clip(y1, 0, cell_size)
+    y2 = np.clip(y2, 0, cell_size)
 
     # Concatenate the bounding box coordinates and detection information, keeping batch index
     bboxes_result = np.stack([x1, y1, x2, y2], axis=0).T
